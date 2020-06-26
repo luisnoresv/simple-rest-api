@@ -41,6 +41,14 @@ exports.login = async (req, res, next) => {
   const password = req.body.password;
 
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error('Validation faliled.');
+      error.statusCode = 422;
+      error.data = errors.array();
+      throw error;
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
       const error = new Error('User not found');
