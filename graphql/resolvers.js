@@ -78,7 +78,7 @@ module.exports = {
           userId: user._id.toString(),
           email: user.email,
         },
-        'super secret user key',
+        process.env.TOKEN_SECRET_KEY,
         { expiresIn: '1h' }
       );
       return { token, userId: user._id.toString() };

@@ -1,10 +1,14 @@
 const path = require('path');
+const fs = require('fs');
 
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const graphqlHttp = require('express-graphql');
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
 
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
@@ -14,6 +18,10 @@ const { clearImage } = require('./util/file');
 // const authRoutes = require('./routes/auth');
 
 const app = express();
+
+require('dotenv').config();
+
+const MONGO_DB_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@shop-iw9ut.mongodb.net/${process.env.MONGO_DEFAULT_DATABASE}`;
 
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -57,8 +65,16 @@ app.use((req, res, next) => {
 // // GET /user/
 // app.use('/auth', authRoutes);
 
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, 'logs/access.log'),
+  { flags: 'a' }
+);
+
+app.use(helmet());
+app.use(compression());
+app.use(morgan('combined', { stream: accessLogStream }));
+
 app.use((error, req, res, next) => {
-  console.log(error);
   const status = error.statusCode || 500;
   const message = error.message;
   const data = error.data;
@@ -107,16 +123,13 @@ app.use(
 );
 
 mongoose
-  .connect(
-    'mongodb+srv://luisnoresv:oStWZa0ffnjkFq5x@shop-iw9ut.mongodb.net/messages?retryWrites=true&w=majority',
-    { useNewUrlParser: true }
-  )
+  .connect(MONGO_DB_URI, { useNewUrlParser: true })
   .then((result) => {
     // const server = app.listen(8080);
     // const io = require('./socket').init(server);
     // io.on('connection', (socket) => {
     //   console.log('Client connected');
     // });
-    app.listen(8080);
+    app.listen(process.env.PORT || 8080);
   })
   .catch((err) => console.log(err));
